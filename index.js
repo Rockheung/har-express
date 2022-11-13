@@ -135,7 +135,21 @@ function getMiddleware(path, options) {
             if (candidate.status !== 200) {
                 res.status(candidate.status);
             }
-            res.type(candidate.content.mimeType).send(Buffer.from(candidate.content.text, candidate.content.encoding));
+            const headers = candidate.headers
+              .filter((header) =>
+                /(^access-control|^content-(?!encoding))/.test(header.name.toLowerCase())
+              )
+              .reduce((accumulated, headerItem) => {
+                return {
+                  ...accumulated,
+                  [headerItem.name]: headerItem.value,
+                };
+              }, {});
+            res
+              .set(headers)
+              .send(
+                Buffer.from(candidate.content.text, candidate.content.encoding)
+              );
         } else {
             next();
         }
